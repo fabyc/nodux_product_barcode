@@ -15,9 +15,9 @@ import tempfile
 from barcode.writer import ImageWriter
 
 __all__ = ['Template', 'CodigoBarras']
-__metaclass__ = PoolMeta
 
 class Template:
+    __metaclass__ = PoolMeta
     __name__ = 'product.template'
 
     variante = fields.Many2One('product.product', 'Codigo de producto', domain=[('template', '=', Eval('id'))])
@@ -46,8 +46,7 @@ class Template:
             purchases = Purchase.search([('id', '=', line.purchase.id)])
             for p in purchases:
                 purchase = p
-            res['purchase'] = purchase.id
-        return res
+            self.purchase = purchase.id
 
     @classmethod
     @ModelView.button
@@ -72,7 +71,12 @@ class CodigoBarras(Report):
     __name__ = 'product.barras_report'
 
     @classmethod
-    def parse(cls, report, records, data, localcontext=None):
+    def get_context(cls, records, data):
+        context = Transaction().context
+
+        report_context = super(CodigoBarras, cls).get_context(
+            records, data)
+
         pool = Pool()
         Company = pool.get('company.company')
         company_id = Transaction().context.get('company')
@@ -136,8 +140,8 @@ class CodigoBarras(Report):
                 elif l != '0':
                     break
             ref = reference[cont:len_r]
-        localcontext['company'] = company
-        localcontext['barcode2'] = image
-        localcontext['precio']=precio_final
-        localcontext['ref_pro']=ref
-        return super(CodigoBarras, cls).parse(report, records, data, localcontext)
+        report_context['company'] = company
+        report_context['barcode2'] = image
+        report_context['precio']=precio_final
+        report_context['ref_pro']=ref
+        return report_context

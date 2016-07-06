@@ -14,7 +14,6 @@ this repository contains the full copyright notices and license terms. -->
         <field name="model">product.template</field>
         <field name="report_name">product.barras_report</field>
         <field name="report">nodux_product_barcode/barcode.odt</field>
-        <field name="style"></field>
     </record>
     <record model="ir.action.keyword" id="report_codigo_barras_keyword">
         <field name="keyword">form_print</field>
