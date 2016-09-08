@@ -15,9 +15,9 @@ import tempfile
 from barcode.writer import ImageWriter
 
 __all__ = ['Template', 'CodigoBarras']
+__metaclass__ = PoolMeta
 
 class Template:
-    __metaclass__ = PoolMeta
     __name__ = 'product.template'
 
     variante = fields.Many2One('product.product', 'Codigo de producto', domain=[('template', '=', Eval('id'))])
@@ -46,7 +46,8 @@ class Template:
             purchases = Purchase.search([('id', '=', line.purchase.id)])
             for p in purchases:
                 purchase = p
-            self.purchase = purchase.id
+            res['purchase'] = purchase.id
+        return res
 
     @classmethod
     @ModelView.button
@@ -71,12 +72,7 @@ class CodigoBarras(Report):
     __name__ = 'product.barras_report'
 
     @classmethod
-    def get_context(cls, records, data):
-        context = Transaction().context
-
-        report_context = super(CodigoBarras, cls).get_context(
-            records, data)
-
+    def parse(cls, report, records, data, localcontext=None):
         pool = Pool()
         Company = pool.get('company.company')
         company_id = Transaction().context.get('company')
@@ -89,59 +85,64 @@ class CodigoBarras(Report):
 
         Product = pool.get('product.template')
         product = records[0]
-        precio = product.list_price
+        precio_final = product.list_price
+        if  product.lista_precio:
+            precio = product.list_price
 
-        if product.taxes_category == True:
-            if product.category.taxes_parent == True:
-                taxes1= Taxes1.search([('category','=', product.category.parent)])
-                taxes2 = Taxes2.search([('product','=', product)])
+            if product.taxes_category == True:
+                if product.category.taxes_parent == True:
+                    taxes1= Taxes1.search([('category','=', product.category.parent)])
+                    taxes2 = Taxes2.search([('product','=', product)])
+                else:
+                    taxes1= Taxes1.search([('category','=', product.category)])
+                    taxes2 = Taxes2.search([('product','=', product)])
             else:
                 taxes1= Taxes1.search([('category','=', product.category)])
                 taxes2 = Taxes2.search([('product','=', product)])
-        else:
-            taxes1= Taxes1.search([('category','=', product.category)])
-            taxes2 = Taxes2.search([('product','=', product)])
 
-        if taxes1:
-            for t in taxes1:
-                iva = precio * t.tax.rate
-        elif taxes2:
-            for t in taxes2:
-                iva = precio * t.tax.rate
-        elif taxes3:
-            for t in taxes3:
-                iva = precio * t.tax.rate
-        precio_total = precio + iva
+            if taxes1:
+                for t in taxes1:
+                    iva = precio * t.tax.rate
+            elif taxes2:
+                for t in taxes2:
+                    iva = precio * t.tax.rate
+            elif taxes3:
+                for t in taxes3:
+                    iva = precio * t.tax.rate
+            precio_total = precio + iva
 
-        lista_precios = product.lista_precio
-        if lista_precios.lines:
-            for line in lista_precios.lines:
-                if line.percentage > 0:
-                    percentage = line.percentage/100
-        precio_final = precio_total * (1- percentage)
-        if company.currency:
-            precio_final = company.currency.round(precio_final)
+            lista_precios = product.lista_precio
+            if lista_precios.lines:
+                for line in lista_precios.lines:
+                    if line.percentage > 0:
+                        percentage = line.percentage/100
+            precio_final = precio_total * (1- percentage)
+            if company.currency:
+                precio_final = company.currency.round(precio_final)
         level, path = tempfile.mkstemp(prefix='%s-%s-' % ('CODE 39', product.variante.code))
         from cStringIO import StringIO as StringIO
         fp = StringIO()
         a = generate('code39', product.variante.code, writer=ImageWriter(), output=fp)
         image = buffer(fp.getvalue())
         fp.close()
-        if product.purchase.supplier_reference:
-            cont = 0
-            references = product.purchase.supplier_reference.split('-')
-            for r in references:
-                print references, r
-                reference = r
-            len_r = len(reference)
-            for l in reference:
-                if l == '0':
-                    cont = cont +1
-                elif l != '0':
-                    break
-            ref = reference[cont:len_r]
-        report_context['company'] = company
-        report_context['barcode2'] = image
-        report_context['precio']=precio_final
-        report_context['ref_pro']=ref
-        return report_context
+        ref = None
+        if product.purchase:
+            if product.purchase.supplier_reference:
+                cont = 0
+                references = product.purchase.supplier_reference.split('-')
+                for r in references:
+                    reference = r
+                len_r = len(reference)
+                for l in reference:
+                    if l == '0':
+                        cont = cont +1
+                    elif l != '0':
+                        break
+
+                ref = reference[cont:len_r]
+
+        localcontext['company'] = company
+        localcontext['barcode2'] = image
+        localcontext['precio']=precio_final
+        localcontext['ref_pro']=ref
+        return super(CodigoBarras, cls).parse(report, records, data, localcontext)
