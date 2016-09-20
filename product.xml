@@ -3,12 +3,11 @@
 this repository contains the full copyright notices and license terms. -->
 <tryton>
     <data>
-      <record model="ir.ui.view" id="template_view_form">
+      <!--record model="ir.ui.view" id="template_view_form">
           <field name="model">product.template</field>
           <field name="inherit" ref="product.template_view_form"/>
           <field name="name">template_form</field>
-      </record>
-
+      </record-->
     <record model="ir.action.report" id="report_codigo_barras">
         <field name="name">Codigo de barras</field>
         <field name="model">product.template</field>
