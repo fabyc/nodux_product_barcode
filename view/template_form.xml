@@ -8,16 +8,12 @@ this repository contains the full copyright notices and license terms. -->
         <page string="Codigo de barras" id="bars">
             <label name="variante"/>
             <field name="variante"/>
+            <newline/>
             <label name="lista_precio"/>
             <field name="lista_precio"/>
+            <label name="lista_precio_oferta"/>
+            <field name="lista_precio_oferta"/>
             <newline/>
-            <label name="purchase"/>
-            <field name="purchase"/>
-            <newline/>
-            <group colspan="2" id="group_bars_2">
-                <button name="actualizar" string="_Actualizar compra"/>
-            </group>
-
         </page>
     </xpath>
 </data>

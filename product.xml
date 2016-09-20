@@ -14,11 +14,34 @@ this repository contains the full copyright notices and license terms. -->
         <field name="model">product.template</field>
         <field name="report_name">product.barras_report</field>
         <field name="report">nodux_product_barcode/barcode.odt</field>
+        <field name="style"></field>
     </record>
     <record model="ir.action.keyword" id="report_codigo_barras_keyword">
         <field name="keyword">form_print</field>
         <field name="model">product.template,-1</field>
         <field name="action" ref="report_codigo_barras"/>
     </record>
+
+    <!-- Configuration -->
+    <record model="ir.ui.view" id="configuration_barcode_view_form">
+        <field name="model">product.configuration_barcode</field>
+        <field name="type">form</field>
+        <field name="name">configuration_barcode_form</field>
+    </record>
+
+    <record model="ir.action.act_window" id="act_configuration_barcode_form">
+        <field name="name">Formato Etiqueta Impresion</field>
+        <field name="res_model">product.configuration_barcode</field>
+        <!--field name="domain"></field-->
+    </record>
+
+    <record model="ir.action.act_window.view" id="act_configuration_barcode_form_view2">
+        <field name="sequence" eval="10"/>
+        <field name="view" ref="configuration_barcode_view_form"/>
+        <field name="act_window" ref="act_configuration_barcode_form"/>
+    </record>
+    <menuitem parent="product.menu_main_product"
+        sequence="30" id="menu_configuration_barcode"
+        action="act_configuration_barcode_form"/>
   </data>
 </tryton>
