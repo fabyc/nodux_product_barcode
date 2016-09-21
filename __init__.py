@@ -6,7 +6,7 @@ from .product import *
 
 def register():
     Pool.register(
-        Template,
+        ConfigurationBarcode,
         module='nodux_product_barcode', type_='model')
     Pool.register(
         CodigoBarras,

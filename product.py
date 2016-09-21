@@ -2,7 +2,7 @@
 #this repository contains the full copyright notices and license terms.
 #! -*- coding: utf8 -*-
 from trytond.pool import *
-from trytond.model import fields, ModelView
+from trytond.model import Workflow, ModelView, ModelSQL, ModelSingleton, fields
 from trytond.pyson import Eval
 from trytond.pyson import Id
 from trytond.report import Report
@@ -14,58 +14,44 @@ from barcode import generate
 import tempfile
 from barcode.writer import ImageWriter
 
-__all__ = ['Template', 'CodigoBarras']
+__all__ = ['CodigoBarras','ConfigurationBarcode']
 __metaclass__ = PoolMeta
 
-class Template:
-    __name__ = 'product.template'
+_FORMATO = [
+    ('tam_1', 'ETIQUETAS DE 3.8 cm X 2.5 cm'),
+    ('tam_2', 'ETIQUETAS DE 5.1 cm X 2.5 cm'),
+    ('tam_3', 'ETIQUETAS DE 5.7 cm X 2.7 cm'),
+    ('tam_4', 'ETIQUETAS DE 7.6 cm X 2.5 cm'),
+    ('tam_5', 'ETIQUETAS DE 8.0 cm X 4.0 cm'),
+    ('tam_6', 'ETIQUETAS DE 10.2 cm X 7.6 cm'),
+    ('tam_7', 'ETIQUETAS DE 10.2 cm X 10.2 cm'),
+]
 
-    variante = fields.Many2One('product.product', 'Codigo de producto', domain=[('template', '=', Eval('id'))])
-    lista_precio = fields.Many2One('product.price_list', 'Lista de precio')
-    purchase = fields.Many2One('purchase.purchase', 'Factura de proveedor', domain=[('lines.product', '=', Eval('variante'))])
+_NOLISTAS = [
+    ('no_1', '1 lista de precio'),
+    ('no_2', '2 listas de precios'),
+    ('no_3', '3 listas de precios'),
+]
 
-    @classmethod
-    def __setup__(cls):
-        super(Template, cls).__setup__
-        cls._buttons.update({
-            'actualizar': {
-                'readonly': ~Eval('active', True),
-            }
-        })
 
-    @fields.depends('variante', 'purchase')
-    def on_change_variante(self):
-        pool = Pool()
-        res= {}
-        if self.variante:
-            PurchaseLine = pool.get('purchase.line')
-            Purchase = pool.get('purchase.purchase')
-            lines = PurchaseLine.search([('product', '=', self.variante.id)])
-            for l in lines:
-                line = l
-            purchases = Purchase.search([('id', '=', line.purchase.id)])
-            for p in purchases:
-                purchase = p
-            res['purchase'] = purchase.id
-        return res
+class ConfigurationBarcode(ModelSingleton, ModelSQL, ModelView):
+    'Configuration Barcode'
+    __name__ = 'product.configuration_barcode'
 
-    @classmethod
-    @ModelView.button
-    def actualizar(cls, products):
-        pool = Pool()
-        PurchaseLine = pool.get('purchase.line')
-        Purchase = pool.get('purchase.purchase')
-        for product in products:
-            if product.variante:
-                lines = PurchaseLine.search([('product', '=', product.variante)])
-            if lines:
-                for l in lines:
-                    line = l
-                purchases = Purchase.search([('id', '=', line.purchase.id)])
-                if purchases:
-                    for p in purchases:
-                        purchase = p
-                    cls.write(products, {'purchase': purchase.id})
+    lista_precio = fields.Many2One('product.price_list', 'Lista de precio normal', states={
+        'required': Eval('no_lista_precio').in_(['no_1','no_2','no_3']),
+    })
+    lista_precio_oferta = fields.Many2One('product.price_list', 'Lista de precio oferta', states={
+        'invisible': Eval('no_lista_precio').in_(['no_1']),
+        'required': Eval('no_lista_precio').in_(['no_2', 'no_3']),
+    })
+    lista_precio_credito = fields.Many2One('product.price_list', 'Lista de precio credito', states={
+        'invisible': Eval('no_lista_precio').in_(['no_1', 'no_2']),
+        'required': Eval('no_lista_precio').in_(['no_3']),
+    })
+    formato = fields.Selection(_FORMATO, 'Formato')
+    no_lista_precio = fields.Selection(_NOLISTAS, 'No. de Listas', help="Numero de listas de precios que se imprimira en la etiqueta")
+
 
 class CodigoBarras(Report):
     'Codigo Barras'
@@ -78,66 +64,72 @@ class CodigoBarras(Report):
         company_id = Transaction().context.get('company')
         Taxes1 = pool.get('product.category-customer-account.tax')
         Taxes2 = pool.get('product.template-customer-account.tax')
+        Configuration = pool.get('product.configuration_barcode')
+        configuration = Configuration.search([('id', '=', 1)])
+        numero = 0
+        for c in configuration:
+            if c.no_lista_precio == 'no_1':
+                lista_normal = c.lista_precio
+                numero = 1
+            if c.no_lista_precio == 'no_2':
+                lista_normal = c.lista_precio
+                lista_oferta = c.lista_precio_oferta
+                numero = 2
+            if c.no_lista_precio == 'no_3':
+                lista_normal = c.lista_precio
+                lista_oferta = c.lista_precio_oferta
+                lista_credito = c.lista_precio_credito
+                numero = 3
+
         company = Company(company_id)
         precio = Decimal(0.0)
+        precio_final = Decimal(0.0)
+        precio_final_oferta = Decimal(0.0)
+        precio_final_credito = Decimal(0.0)
         iva = Decimal(0.0)
         percentage = Decimal(0.0)
 
         Product = pool.get('product.template')
         product = records[0]
-        precio = product.list_price
+        Variante = pool.get('product.product')
+        variantes = Variante.search([('template', '=', product)])
+        code = ""
+        for v in variantes:
+            code = v.code
+            break
 
-        if product.taxes_category == True:
-            if product.category.taxes_parent == True:
-                taxes1= Taxes1.search([('category','=', product.category.parent)])
-                taxes2 = Taxes2.search([('product','=', product)])
-            else:
-                taxes1= Taxes1.search([('category','=', product.category)])
-                taxes2 = Taxes2.search([('product','=', product)])
-        else:
-            taxes1= Taxes1.search([('category','=', product.category)])
-            taxes2 = Taxes2.search([('product','=', product)])
+        for lista in product.listas_precios:
+            if numero == 1:
+                if lista.lista_precio == lista_normal:
+                    precio_final = lista.fijo
+            if numero == 2:
+                if lista.lista_precio == lista_normal:
+                    precio_final = lista.fijo
+                elif lista.lista_precio == lista_oferta:
+                    precio_final_oferta = lista.fijo
+            if numero == 3:
+                if lista.lista_precio == lista_normal:
+                    precio_final = lista.fijo
+                elif lista.lista_precio == lista_oferta:
+                    precio_final_oferta = lista.fijo
+                elif lista.lista_precio == lista_credito:
+                    precio_final_credito = lista.fijo
 
-        if taxes1:
-            for t in taxes1:
-                iva = precio * t.tax.rate
-        elif taxes2:
-            for t in taxes2:
-                iva = precio * t.tax.rate
-        elif taxes3:
-            for t in taxes3:
-                iva = precio * t.tax.rate
-        precio_total = precio + iva
-
-        lista_precios = product.lista_precio
-        if lista_precios.lines:
-            for line in lista_precios.lines:
-                if line.percentage > 0:
-                    percentage = line.percentage/100
-        precio_final = precio_total * (1- percentage)
-        if company.currency:
-            precio_final = company.currency.round(precio_final)
-        level, path = tempfile.mkstemp(prefix='%s-%s-' % ('CODE 39', product.variante.code))
+        level, path = tempfile.mkstemp(prefix='%s-%s-' % ('CODE 39', code))
         from cStringIO import StringIO as StringIO
         fp = StringIO()
-        a = generate('code39', product.variante.code, writer=ImageWriter(), output=fp)
+        a = generate('code39', code, writer=ImageWriter(), output=fp)
         image = buffer(fp.getvalue())
         fp.close()
-        if product.purchase.supplier_reference:
-            cont = 0
-            references = product.purchase.supplier_reference.split('-')
-            for r in references:
-                print references, r
-                reference = r
-            len_r = len(reference)
-            for l in reference:
-                if l == '0':
-                    cont = cont +1
-                elif l != '0':
-                    break
-            ref = reference[cont:len_r]
+        ref = None
         localcontext['company'] = company
+        localcontext['barcode1'] = image
         localcontext['barcode2'] = image
-        localcontext['precio']=precio_final
-        localcontext['ref_pro']=ref
+        localcontext['barcode3'] = image
+        localcontext['precio'] = precio_final
+        localcontext['precio_oferta'] = precio_final_oferta
+        localcontext['precio_credito'] = precio_final_credito
+        localcontext['numero'] = numero
+        localcontext['code'] = code
+        localcontext['ref_pro'] = ref
         return super(CodigoBarras, cls).parse(report, records, data, localcontext)

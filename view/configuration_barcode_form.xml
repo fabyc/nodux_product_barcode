@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<!-- This file is part of Tryton.  The COPYRIGHT file at the top level of
+this repository contains the full copyright notices and license terms. -->
+<form string="Configuracion Formato de Impresion">
+    <label name="no_lista_precio"/>
+    <field name="no_lista_precio"/>
+    <label name="formato"/>
+    <field name="formato"/>
+    <newline/>
+    <label name="lista_precio"/>
+    <field name="lista_precio"/>
+    <newline/>
+    <label name="lista_precio_oferta"/>
+    <field name="lista_precio_oferta"/>
+    <newline/>
+    <label name="lista_precio_credito"/>
+    <field name="lista_precio_credito"/>
+</form>
