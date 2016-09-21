@@ -2,7 +2,7 @@
 #this repository contains the full copyright notices and license terms.
 #! -*- coding: utf8 -*-
 from trytond.pool import *
-from trytond.model import Workflow, ModelView, ModelSQL, fields
+from trytond.model import Workflow, ModelView, ModelSQL, ModelSingleton, fields
 from trytond.pyson import Eval
 from trytond.pyson import Id
 from trytond.report import Report
@@ -34,7 +34,7 @@ _NOLISTAS = [
 ]
 
 
-class ConfigurationBarcode(ModelSQL, ModelView):
+class ConfigurationBarcode(ModelSingleton, ModelSQL, ModelView):
     'Configuration Barcode'
     __name__ = 'product.configuration_barcode'
 
@@ -65,7 +65,7 @@ class CodigoBarras(Report):
         Taxes1 = pool.get('product.category-customer-account.tax')
         Taxes2 = pool.get('product.template-customer-account.tax')
         Configuration = pool.get('product.configuration_barcode')
-        configuration = Configuration.search([('id', '=', 6)])
+        configuration = Configuration.search([('id', '=', 1)])
         numero = 0
         for c in configuration:
             if c.no_lista_precio == 'no_1':

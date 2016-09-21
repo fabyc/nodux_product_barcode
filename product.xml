@@ -31,11 +31,10 @@ this repository contains the full copyright notices and license terms. -->
     <record model="ir.action.act_window" id="act_configuration_barcode_form">
         <field name="name">Formato Etiqueta Impresion</field>
         <field name="res_model">product.configuration_barcode</field>
-        <!--field name="domain"></field-->
     </record>
 
-    <record model="ir.action.act_window.view" id="act_configuration_barcode_form_view2">
-        <field name="sequence" eval="10"/>
+    <record model="ir.action.act_window.view" id="act_configuration_barcode_form_view1">
+        <field name="sequence" eval="1"/>
         <field name="view" ref="configuration_barcode_view_form"/>
         <field name="act_window" ref="act_configuration_barcode_form"/>
     </record>
