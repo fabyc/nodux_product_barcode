@@ -101,19 +101,19 @@ class CodigoBarras(Report):
         for lista in product.listas_precios:
             if numero == 1:
                 if lista.lista_precio == lista_normal:
-                    precio_final = lista.fijo
+                    precio_final = lista.fijo_con_iva
             if numero == 2:
                 if lista.lista_precio == lista_normal:
-                    precio_final = lista.fijo
+                    precio_final = lista.fijo_con_iva
                 elif lista.lista_precio == lista_oferta:
-                    precio_final_oferta = lista.fijo
+                    precio_final_oferta = lista.fijo_con_iva
             if numero == 3:
                 if lista.lista_precio == lista_normal:
-                    precio_final = lista.fijo
+                    precio_final = lista.fijo_con_iva
                 elif lista.lista_precio == lista_oferta:
-                    precio_final_oferta = lista.fijo
+                    precio_final_oferta = lista.fijo_con_iva
                 elif lista.lista_precio == lista_credito:
-                    precio_final_credito = lista.fijo
+                    precio_final_credito = lista.fijo_con_iva
 
         level, path = tempfile.mkstemp(prefix='%s-%s-' % ('CODE 39', code))
         from cStringIO import StringIO as StringIO
