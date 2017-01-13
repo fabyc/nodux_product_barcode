@@ -9,10 +9,16 @@ this repository contains the full copyright notices and license terms. -->
     <newline/>
     <label name="lista_precio"/>
     <field name="lista_precio"/>
+    <label name="etiqueta_1"/>
+    <field name="etiqueta_1"/>
     <newline/>
     <label name="lista_precio_oferta"/>
     <field name="lista_precio_oferta"/>
+    <label name="etiqueta_2"/>
+    <field name="etiqueta_2"/>
     <newline/>
     <label name="lista_precio_credito"/>
     <field name="lista_precio_credito"/>
+    <label name="etiqueta_3"/>
+    <field name="etiqueta_3"/>
 </form>

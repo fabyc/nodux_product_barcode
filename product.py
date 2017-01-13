@@ -38,17 +38,33 @@ class ConfigurationBarcode(ModelSingleton, ModelSQL, ModelView):
     'Configuration Barcode'
     __name__ = 'product.configuration_barcode'
 
-    lista_precio = fields.Many2One('product.price_list', 'Lista de precio normal', states={
+    lista_precio = fields.Many2One('product.price_list', 'Lista de precio 1', states={
         'required': Eval('no_lista_precio').in_(['no_1','no_2','no_3']),
     })
-    lista_precio_oferta = fields.Many2One('product.price_list', 'Lista de precio oferta', states={
+
+    etiqueta_1 = fields.Char('Etiqueta impresion', states={
+        'required': Eval('no_lista_precio').in_(['no_1','no_2','no_3']),
+    })
+
+    lista_precio_oferta = fields.Many2One('product.price_list', 'Lista de precio 2', states={
         'invisible': Eval('no_lista_precio').in_(['no_1']),
         'required': Eval('no_lista_precio').in_(['no_2', 'no_3']),
     })
-    lista_precio_credito = fields.Many2One('product.price_list', 'Lista de precio credito', states={
+
+    etiqueta_2 = fields.Char('Etiqueta impresion', states={
+        'invisible': Eval('no_lista_precio').in_(['no_1']),
+        'required': Eval('no_lista_precio').in_(['no_2', 'no_3']),
+        })
+
+    lista_precio_credito = fields.Many2One('product.price_list', 'Lista de precio 3', states={
         'invisible': Eval('no_lista_precio').in_(['no_1', 'no_2']),
         'required': Eval('no_lista_precio').in_(['no_3']),
     })
+    etiqueta_3 = fields.Char('Etiqueta impresion', states={
+        'invisible': Eval('no_lista_precio').in_(['no_1', 'no_2']),
+        'required': Eval('no_lista_precio').in_(['no_3']),
+        })
+
     formato = fields.Selection(_FORMATO, 'Formato')
     no_lista_precio = fields.Selection(_NOLISTAS, 'No. de Listas', help="Numero de listas de precios que se imprimira en la etiqueta")
 
@@ -67,19 +83,31 @@ class CodigoBarras(Report):
         Configuration = pool.get('product.configuration_barcode')
         configuration = Configuration.search([('id', '=', 1)])
         numero = 0
+        etiqueta = ""
+        etiqueta_2 = ""
+        etiqueta_3 = ""
+
         for c in configuration:
             if c.no_lista_precio == 'no_1':
                 lista_normal = c.lista_precio
                 numero = 1
+                etiqueta = c.etiqueta_1
+
             if c.no_lista_precio == 'no_2':
                 lista_normal = c.lista_precio
                 lista_oferta = c.lista_precio_oferta
                 numero = 2
+                etiqueta = c.etiqueta_1
+                etiqueta_2 = c.etiqueta_2
+
             if c.no_lista_precio == 'no_3':
                 lista_normal = c.lista_precio
                 lista_oferta = c.lista_precio_oferta
                 lista_credito = c.lista_precio_credito
                 numero = 3
+                etiqueta = c.etiqueta_1
+                etiqueta_2 = c.etiqueta_2
+                etiqueta_3 = c.etiqueta_3
 
         company = Company(company_id)
         precio = Decimal(0.0)
@@ -101,7 +129,6 @@ class CodigoBarras(Report):
                 code_eti = v.code
 
             if cont == 2:
-                print  "Ingresa aqui"
                 code = v.code
                 break
             cont += 1
@@ -138,6 +165,9 @@ class CodigoBarras(Report):
         localcontext['precio'] = precio_final
         localcontext['precio_oferta'] = precio_final_oferta
         localcontext['precio_credito'] = precio_final_credito
+        localcontext['etiqueta'] = etiqueta
+        localcontext['etiqueta_2'] = etiqueta_2
+        localcontext['etiqueta_3'] = etiqueta_3
         localcontext['numero'] = numero
         localcontext['code'] = code_eti
         localcontext['ref_pro'] = ref
