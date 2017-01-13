@@ -94,9 +94,18 @@ class CodigoBarras(Report):
         Variante = pool.get('product.product')
         variantes = Variante.search([('template', '=', product)])
         code = ""
+        cont = 1
         for v in variantes:
             code = v.code
-            break
+            if cont == 1:
+                code_eti = v.code
+
+            if cont == 2:
+                print  "Ingresa aqui"
+                code = v.code
+                break
+            cont += 1
+
 
         for lista in product.listas_precios:
             if numero == 1:
@@ -130,6 +139,6 @@ class CodigoBarras(Report):
         localcontext['precio_oferta'] = precio_final_oferta
         localcontext['precio_credito'] = precio_final_credito
         localcontext['numero'] = numero
-        localcontext['code'] = code
+        localcontext['code'] = code_eti
         localcontext['ref_pro'] = ref
         return super(CodigoBarras, cls).parse(report, records, data, localcontext)
