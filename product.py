@@ -119,6 +119,12 @@ class CodigoBarras(Report):
 
         Product = pool.get('product.template')
         product = records[0]
+        tam = len(product.name)
+        if tam > 65:
+            name = str(product.name)[0:64]
+        else:
+            name = product.name
+
         Variante = pool.get('product.product')
         variantes = Variante.search([('template', '=', product)])
         code = ""
@@ -151,17 +157,20 @@ class CodigoBarras(Report):
                 elif lista.lista_precio == lista_credito:
                     precio_final_credito = lista.fijo_con_iva
 
+        """
         level, path = tempfile.mkstemp(prefix='%s-%s-' % ('CODE 39', code))
         from cStringIO import StringIO as StringIO
         fp = StringIO()
         a = generate('code39', code, writer=ImageWriter(), output=fp)
         image = buffer(fp.getvalue())
         fp.close()
+        """
         ref = None
         localcontext['company'] = company
-        localcontext['barcode1'] = image
-        localcontext['barcode2'] = image
-        localcontext['barcode3'] = image
+        #localcontext['barcode1'] = image
+        #localcontext['barcode2'] = image
+        #localcontext['barcode3'] = image
+        localcontext['name'] = name
         localcontext['precio'] = precio_final
         localcontext['precio_oferta'] = precio_final_oferta
         localcontext['precio_credito'] = precio_final_credito
