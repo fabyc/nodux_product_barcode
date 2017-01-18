@@ -121,7 +121,7 @@ class CodigoBarras(Report):
         product = records[0]
         tam = len(product.name)
         if tam > 70:
-            name = str(product.name)[0:69]
+            name = str(product.name)[0:70]
         else:
             name = product.name
 
