@@ -120,8 +120,8 @@ class CodigoBarras(Report):
         Product = pool.get('product.template')
         product = records[0]
         tam = len(product.name)
-        if tam > 65:
-            name = str(product.name)[0:64]
+        if tam > 70:
+            name = str(product.name)[0:69]
         else:
             name = product.name
 
