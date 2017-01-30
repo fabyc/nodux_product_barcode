@@ -1,6 +1,8 @@
+#! -*- coding: utf8 -*-
+
 #This file is part of Tryton.  The COPYRIGHT file at the top level of
 #this repository contains the full copyright notices and license terms.
-#! -*- coding: utf8 -*-
+
 from trytond.pool import *
 from trytond.model import Workflow, ModelView, ModelSQL, ModelSingleton, fields
 from trytond.pyson import Eval
@@ -66,6 +68,7 @@ class ConfigurationBarcode(ModelSingleton, ModelSQL, ModelView):
         })
 
     formato = fields.Selection(_FORMATO, 'Formato')
+
     no_lista_precio = fields.Selection(_NOLISTAS, 'No. de Listas', help="Numero de listas de precios que se imprimira en la etiqueta")
 
 
@@ -120,8 +123,9 @@ class CodigoBarras(Report):
         Product = pool.get('product.template')
         product = records[0]
         tam = len(product.name)
+
         if tam > 65:
-            name = str(product.name)[0:65]
+            name = (product.name)[0:65]
         else:
             name = product.name
 
